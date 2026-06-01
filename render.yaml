@@ -1,0 +1,20 @@
+# render.yaml — Blueprint opcional (infra-as-code) para o Render.
+# Provisiona o Web Service a partir do Dockerfile deste repositório.
+# Os segredos têm sync:false e devem ser preenchidos pelo painel do Render.
+services:
+  - type: web
+    name: agentes-curso
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: LANGFUSE_PUBLIC_KEY
+        sync: false
+      - key: LANGFUSE_SECRET_KEY
+        sync: false
+      - key: LANGFUSE_HOST
+        value: https://cloud.langfuse.com

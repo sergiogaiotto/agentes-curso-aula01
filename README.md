@@ -1,2 +1,171 @@
-# agentes-curso-aula01
-agentes-curso-aula01
+# Agentes de IA — Projeto do Curso (Aula 1)
+
+> **AGENTES DE IA: A revolução da IA** · Aula 1 — Fundamentos + Setup do Projeto
+> Agente ReAct mínimo com FastAPI, observabilidade no Langfuse, empacotado em Docker e pronto para deploy no Render.
+
+Este é o ponto de partida do projeto multiagente do curso. A cada aula adicionamos uma
+camada (memória, RAG com PostgreSQL + pgvector, mais ferramentas, orquestração
+multiagente, avaliação) sobre esta mesma base. O objetivo da Aula 1 é deixar o alicerce
+sólido: ambiente reprodutível, segredos protegidos e o hábito de **ver o agente por
+dentro** desde o primeiro dia.
+
+---
+
+## Stack
+
+| Camada | Tecnologia |
+|---|---|
+| Orquestração | LangGraph (>= 1.0) |
+| Componentes / agente | LangChain (>= 1.0), `create_agent` |
+| Modelo (LLM) | OpenAI (padrão `gpt-4o-mini`, trocável) |
+| API | FastAPI + Uvicorn |
+| Observabilidade | Langfuse |
+| Empacotamento | Docker |
+| Deploy | Render (a partir do GitHub) |
+| Próximas aulas (já nas deps) | PostgreSQL + pgvector |
+
+Infraestrutura, frameworks e RAG são open-source; o LLM começa na OpenAI e é configurável.
+
+---
+
+## Estrutura
+
+```
+agentes-curso/
+├── app/
+│   ├── __init__.py
+│   ├── agent.py        # definição do agente (LangGraph + LangChain)
+│   └── main.py         # API FastAPI que expõe o agente
+├── .env.example        # modelo de segredos (versionar)
+├── .gitignore
+├── .dockerignore
+├── Dockerfile
+├── render.yaml         # infra-as-code opcional para o Render
+├── requirements.txt
+└── README.md
+```
+
+> O arquivo `.env` com os segredos reais **não** é versionado. Crie-o a partir do `.env.example`.
+
+---
+
+## Como rodar localmente
+
+### 1. Ambiente virtual
+
+```bash
+python -m venv .venv
+
+# macOS / Linux
+source .venv/bin/activate
+# Windows (PowerShell)
+# .venv\Scripts\Activate.ps1
+```
+
+### 2. Dependências
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Segredos
+
+```bash
+cp .env.example .env
+# Abra o .env e cole suas chaves reais da OpenAI e do Langfuse
+```
+
+> **Regra de segurança:** confirme que `.env` está no `.gitignore` antes do primeiro
+> commit. Uma chave da OpenAI vazada em repositório público é explorada em minutos.
+
+### 4. Subir a API
+
+```bash
+uvicorn app.main:app --reload --port 8000
+```
+
+### 5. Testar
+
+```bash
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Quanto é 17% de 2480? Use a calculadora."}'
+```
+
+Resposta esperada (aprox.):
+
+```json
+{"answer": "17% de 2480 é 421,6."}
+```
+
+Documentação interativa: abra `http://localhost:8000/docs`.
+
+**Checkpoint:** além da resposta coerente, confirme no painel do Langfuse (aba
+**Traces**) a execução completa — raciocínio, chamada da ferramenta `calculator`,
+tokens e latência.
+
+---
+
+## Rodar com Docker
+
+```bash
+docker build -t agente-aula1 .
+docker run --rm -p 8000:8000 --env-file .env agente-aula1
+```
+
+A resposta deve ser idêntica à execução local — agora vinda do container.
+
+---
+
+## Deploy no Render
+
+1. Suba o repositório para o GitHub (o `.env` **não** vai junto).
+2. No Render: **New +** → **Web Service** → conecte o repositório.
+3. Environment: **Docker** (o Render detecta o `Dockerfile`).
+4. Em **Environment Variables**, recrie manualmente as chaves do seu `.env`
+   (`OPENAI_API_KEY`, `OPENAI_MODEL`, `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`,
+   `LANGFUSE_HOST`).
+5. **Health Check Path:** `/health`.
+6. **Create Web Service** e aguarde o build.
+
+Alternativa: use o `render.yaml` incluso (Blueprint) para provisionar o serviço; ainda
+assim, **insira os valores dos segredos pelo painel** — eles têm `sync: false` e não
+ficam no repositório.
+
+> **Tier free:** o serviço hiberna após ~15 min de inatividade; a primeira chamada
+> seguinte demora ~30–60s para acordar.
+
+---
+
+## Endpoints
+
+| Método | Rota | Descrição |
+|---|---|---|
+| `GET` | `/health` | Verificação de saúde (usada pelo Render) |
+| `POST` | `/chat` | Recebe `{"message": "..."}` e devolve `{"answer": "..."}` |
+
+---
+
+## Trocar o modelo (LLM)
+
+O modelo é lido de `OPENAI_MODEL` no `.env`. Para usar outro modelo da OpenAI, basta
+alterar essa variável. Para um provedor diferente (ex.: modelo open-source via servidor
+compatível), troque o `ChatOpenAI` em `app/agent.py` pelo cliente correspondente — o
+restante do código permanece igual.
+
+---
+
+## Erros comuns
+
+| Sintoma | Causa | Solução |
+|---|---|---|
+| `AuthenticationError` da OpenAI | Chave inválida / sem crédito | Confira `OPENAI_API_KEY` e o crédito da conta |
+| Traces não aparecem no Langfuse | Chaves `LANGFUSE_*` erradas | Reconfira as 3 variáveis e o `LANGFUSE_HOST` |
+| `ModuleNotFoundError` | `.venv` inativo / deps faltando | Reative o `.venv` e reinstale o `requirements.txt` |
+| `ImportError: create_agent` | LangChain antigo | Garanta `langchain>=1.0` |
+| Render: "No open ports detected" | App não escutou em `0.0.0.0:$PORT` | Confira o `CMD` do `Dockerfile` |
+
+---
+
+Sergio Gaiotto · Direção de Dados e IA
+Código em inglês, comentários em português · Stack open-source com LLM configurável.

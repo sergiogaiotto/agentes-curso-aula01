@@ -1,0 +1,19 @@
+# --- Núcleo de agentes ---
+langgraph>=1.0,<2.0
+langchain>=1.0,<2.0
+langchain-openai>=1.0,<2.0
+
+# --- API web ---
+fastapi>=0.115
+uvicorn[standard]>=0.32
+
+# --- Observabilidade ---
+langfuse>=3.0
+
+# --- Utilidades ---
+pydantic>=2.9
+python-dotenv>=1.0
+
+# --- Já preparando as próximas aulas (RAG / memória) ---
+psycopg[binary]>=3.2
+pgvector>=0.3
