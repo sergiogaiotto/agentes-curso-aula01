@@ -9,6 +9,8 @@ from langchain_openai import ChatOpenAI
 from app.rag import get_vector_store
 from app.tools_externas import lookup_cep
 
+from app.mcp_client import carregar_tools_mcp
+
 load_dotenv()
 
 
@@ -70,3 +72,13 @@ def build_model():
     """Cria o modelo já com as ferramentas vinculadas (tool calling)."""
     model = ChatOpenAI(model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"), temperature=0)
     return model.bind_tools(TOOLS)
+
+
+# Ferramentas que NÓS escrevemos (Aulas 1-4).
+TOOLS = [calculator, knowledge_search, lookup_cep]
+
+# Ferramentas que VÊM de servidores MCP (Aula 9), sem adaptador sob medida.
+_mcp_tools = carregar_tools_mcp()
+TOOLS = TOOLS + _mcp_tools
+
+# A partir daqui, o agente trata todas igual — locais e externas.
