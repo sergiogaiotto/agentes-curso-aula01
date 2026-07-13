@@ -60,6 +60,9 @@ SYSTEM_PROMPT = (
     "endereços a partir de um CEP. Responda com base nos resultados das ferramentas; "
     "se a busca de conhecimento não encontrar, diga que não sabe; se uma ferramenta "
     "falhar, explique. Responda em português, de forma concisa."
+    # Restrição explícita que ataca a falha de 'fora de escopo':
+    "Se a informação NÃO estiver na base, diga claramente que NÃO TEM "
+    "essa informação — nunca invente. Responda conciso, em português."
 )
 
 
