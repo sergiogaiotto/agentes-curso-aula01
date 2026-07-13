@@ -43,3 +43,22 @@ CASOS = [
         ],
     ),
 ]
+
+def run_evals(agente: Callable[[str], str], casos=CASOS) -> dict:
+    """Roda os casos contra o agente e devolve nota + detalhes.
+    'agente' é qualquer função que recebe a entrada e devolve a resposta."""
+    total, passou = 0, 0
+    detalhes = []
+
+    for caso in casos:
+        resposta = agente(caso.entrada)
+        resultados_caso = []
+        for descricao, checagem in caso.checagens:
+            ok = bool(checagem(resposta))
+            total += 1
+            passou += int(ok)
+            resultados_caso.append({"checagem": descricao, "passou": ok})
+        detalhes.append({"caso": caso.nome, "resultados": resultados_caso})
+
+    score = round(passou / total * 100, 1) if total else 0.0
+    return {"score": score, "passou": passou, "total": total, "detalhes": detalhes}
