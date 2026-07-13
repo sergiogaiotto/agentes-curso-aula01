@@ -11,6 +11,8 @@ from app.tools_externas import lookup_cep
 
 from app.mcp_client import carregar_tools_mcp
 
+from app.skills_loader import descobrir_skills, resumo_para_prompt
+
 load_dotenv()
 
 
@@ -81,4 +83,8 @@ TOOLS = [calculator, knowledge_search, lookup_cep]
 _mcp_tools = carregar_tools_mcp()
 TOOLS = TOOLS + _mcp_tools
 
-# A partir daqui, o agente trata todas igual — locais e externas.
+# NÍVEL 1: no boot, só os metadados das skills vão ao prompt (poucos tokens).
+SKILLS = descobrir_skills("skills")
+SYSTEM_PROMPT = SYSTEM_PROMPT + "\n\n" + resumo_para_prompt(SKILLS)
+# NÍVEL 2: carregar_skill(SKILLS, nome) traz as instruções completas só
+# quando a tarefa exige — mantendo o contexto enxuto.
